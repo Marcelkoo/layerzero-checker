@@ -3,7 +3,6 @@ import asyncio
 import pandas as pd
 import random
 
-
 use_proxy = True  # True / False
 
 def get_proxy_dict(proxy):
@@ -49,7 +48,14 @@ async def main():
         results = await asyncio.gather(*tasks)
 
     data = []
+    total_zro_allocation = 0
+    eligible_count = 0
+
     for result in results:
+        zro_allocation = float(result['zroAllocation']['asString'])
+        if zro_allocation > 0:
+            eligible_count += 1
+            total_zro_allocation += zro_allocation
         wallet_info = {
             "address": result['address'],
             "ZRO Allocation": result['zroAllocation']['asString']
@@ -58,6 +64,8 @@ async def main():
 
     df = pd.DataFrame(data)
     print(df)
+    print(f"Total ZRO Allocation: {total_zro_allocation}")
+    print(f"Eligible addresses: {eligible_count}/{len(wallets)}")
 
     df.to_csv('allocation.csv', index=False)
 
