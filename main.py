@@ -22,7 +22,20 @@ async def fetch_wallet_data(session, wallet, proxies):
         try:
             async with session.get(url, proxy=proxy_dict['http'] if proxy_dict else None) as response:
                 response.raise_for_status()
-                return await response.json()
+                data = await response.json()
+                if 'error' in data and data['error'] == 'Record not found':
+                    return {"address": wallet, "zroAllocation": {"asString": "0"}}
+                return data
+        except aiohttp.ClientResponseError as e:
+            if e.status == 404:
+                return {"address": wallet, "zroAllocation": {"asString": "0"}}
+            if proxies:
+                print(f"Error with proxy {proxy}: {e}")
+                proxies.remove(proxy)
+                if not proxies:
+                    raise RuntimeError("No more proxies available")
+            else:
+                raise e
         except Exception as e:
             if proxies:
                 print(f"Error with proxy {proxy}: {e}")
